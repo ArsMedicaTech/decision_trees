@@ -1,0 +1,16 @@
+{
+    "question": "What is your diastolic blood pressure?",
+    "branches": {
+        ">= 120": "Hypertensive crisis - Seek emergency care immediately",
+        "< 120": {
+            "question": "What is your systolic blood pressure?",
+            "branches": {
+                ">= 180": "Hypertensive crisis - Seek emergency care immediately",
+                ">= 140": "Hypertension Stage 2 - Discuss medication and lifestyle changes with a clinician",
+                "130-139": "Hypertension Stage 1 - Lifestyle changes and possible medication (clinician-guided)",
+                "120-129": "Elevated blood pressure - Adopt heart-healthy lifestyle",
+                "< 120": "Normal blood pressure - Maintain current healthy habits"
+            }
+        }
+    }
+}
