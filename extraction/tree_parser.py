@@ -1,3 +1,8 @@
+"""
+This class is responsible for parsing the output from the LLM and converting it into a structured format.
+"""
+from typing import Any, Dict
+
 import re
 import json
 
@@ -5,6 +10,10 @@ class LLMTreeParser:
     """
     Parses the semi-structured text output from an LLM into a nested dictionary
     that conforms to the arsmedicatech decision tree schema.
+
+    NOTE: One might ask why we are not directing the original extractor LLM to
+    simply return structured outputs, but the LLM is much more specialized and
+    this allows us to relieve some of the burden on the extraction process.
     """
     def __init__(self):
         # Compile regex patterns for efficiency
@@ -20,7 +29,7 @@ class LLMTreeParser:
         """Calculates the indentation level based on leading spaces."""
         return len(line) - len(line.lstrip(' '))
 
-    def parse(self, llm_output: str) -> dict:
+    def parse(self, llm_output: str) -> Dict[Any, Any]:
         """
         Parses the full multi-line output from the LLM.
         
@@ -76,7 +85,7 @@ class LLMTreeParser:
         return self.root
 
 # --- Example Usage ---
-if __name__ == "__main__":
+def test():
     # The semi-structured text we expect from the LLM
     llm_output_text = """
     DECISION POINT: Does the patient have generalized tonic-clonic seizures?
@@ -100,3 +109,11 @@ if __name__ == "__main__":
 
     # Print the resulting structured dictionary
     print(json.dumps(decision_tree, indent=4))
+
+
+def parser_util(llm_output: str) -> Dict[Any, Any]:
+    """
+    Utility function to parse LLM output into a structured format.
+    """
+    parser = LLMTreeParser()
+    return parser.parse(llm_output)
