@@ -6,6 +6,77 @@ from typing import Any, Dict
 import re
 import json
 
+from lark import Lark, Transformer, v_args
+
+decision_tree_grammar = r"""
+    ?tree: decision_node
+
+    // THE FIX: A decision_node is a DECISION_POINT line FOLLOWED BY if_blocks.
+    // The rigid _INDENT/_DEDENT wrapper has been removed from this top-level rule.
+    ?decision_node: DECISION_POINT if_block+ -> build_decision_node
+
+    // An if_block still correctly uses indentation for its OWN children.
+    // ?if_block: "IF" QUOTED_STRING ":" (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
+    ?if_block: "IF" QUOTED_STRING ":" NEWLINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
+
+    // --- Helper Rules & Terminals ---
+    IF_LINE: "IF" QUOTED_STRING ":"
+
+    // ?outcome: OUTCOME -> get_outcome_text
+    ?outcome: OUTCOME NEWLINE -> get_outcome_text
+
+    // --- Terminal Tokens ---
+    // We add NEWLINE to the main tokens to help the parser distinguish complete lines.
+    DECISION_POINT: "DECISION POINT:" /[^\n]+/
+    OUTCOME: "OUTCOME:" /[^\n]+/
+    QUOTED_STRING: /'[^']+'/
+
+    // --- Whitespace and Newlines ---
+    %import common.WS
+    %import common.NEWLINE
+    %ignore WS
+
+    // --- Indentation Handling ---
+    %declare _INDENT _DEDENT
+"""
+
+@v_args(inline=True)
+class TreeToJson(Transformer):
+    def build_decision_node(self, question, *branches):
+        # This method is called for a 'decision_node' rule.
+        # It receives the question text and all the processed child branches.
+        return {
+            "question": question.strip(),
+            "branches": dict(branches) # Convert list of (key, value) tuples into a dict
+        }
+
+    def build_if_block(self, if_line, child_node):
+        # This method is called for an 'if_block' rule.
+        # It receives the condition text (like 'Yes') and the processed child (either an outcome or another decision node).
+        key = if_line.children[0]
+        return key, child_node
+
+    def get_outcome_text(self, text):
+        # This just cleans up the outcome text.
+        return text.strip()
+
+    # --- Token Processing ---
+    # These methods clean up the raw token values before they are passed to the rule methods above.
+    def DECISION_POINT(self, s):
+        return s.value.strip()
+    
+    def QUOTED_STRING(self, s):
+        return s[1:-1]
+
+    def IF_CONDITION_UNUSED(self, s):
+        # We need to extract just the quoted string part from the IF_CONDITION token
+        match = re.search(r"'(.*?)'", s)
+        return match.group(1) if match else None
+
+    def OUTCOME(self, s):
+        return s.value.strip()
+
+
 class LLMTreeParser:
     """
     Parses the semi-structured text output from an LLM into a nested dictionary
@@ -16,73 +87,35 @@ class LLMTreeParser:
     this allows us to relieve some of the burden on the extraction process.
     """
     def __init__(self):
-        # Compile regex patterns for efficiency
-        self.decision_pattern = re.compile(r"^\s*DECISION POINT: (.*)")
-        self.if_pattern = re.compile(r"^\s*- IF '(.*)':")
-        self.outcome_pattern = re.compile(r"^\s*OUTCOME: (.*)")
+        # Create the parser instance with our grammar.
+        # The 'start' rule is 'tree', and we tell it to use Lark's indentation lexer.
+        self.parser = Lark(
+            decision_tree_grammar,
+            start='tree',
+            parser='lalr',
+            lexer='contextual'
+        )
         
-        self.root = {}
-        # The stack will hold references to the 'branches' dictionary at each level
-        self.stack = []
-
-    def get_indent_level(self, line: str) -> int:
-        """Calculates the indentation level based on leading spaces."""
-        return len(line) - len(line.lstrip(' '))
-
+        self.transformer = TreeToJson()
+    
     def parse(self, llm_output: str) -> Dict[Any, Any]:
         """
         Parses the full multi-line output from the LLM.
-        
+
         Returns:
             A dictionary representing the structured decision tree.
         """
-        lines = llm_output.strip().split('\n')
-        
-        # Initialize with the root of the tree
-        self.stack.append(self.root)
-        current_branch_key = None
-        
-        for line in lines:
-            if not line.strip():
-                continue
+        # The text needs a newline at the end for the indentation logic to work correctly.
+        llm_output = llm_output.strip() + "\n"
 
-            # Match against our patterns
-            match_decision = self.decision_pattern.match(line)
-            match_if = self.if_pattern.match(line)
-            match_outcome = self.outcome_pattern.match(line)
+        # 1. Parse the text into a tree object
+        parse_tree = self.parser.parse(llm_output)
 
-            # Get the current parent's branches from the top of the stack
-            parent_branches = self.stack[-1]
+        # 2. Transform the tree into our final dictionary
+        structured_tree = self.transformer.transform(parse_tree)
 
-            if match_decision:
-                question_text = match_decision.group(1).strip()
-                new_node = {
-                    "question": question_text,
-                    "branches": {}
-                }
-                # If this is the very first node, it becomes the root
-                if not parent_branches:
-                    self.root.update(new_node)
-                # Otherwise, it's a child of the previous 'IF'
-                else:
-                    parent_branches[current_branch_key] = new_node
-                
-                # We are now inside the new node's branches, so push them to the stack
-                self.stack.append(new_node["branches"])
+        return structured_tree
 
-            elif match_if:
-                # This line defines the key for the next branch
-                current_branch_key = match_if.group(1).strip()
-                # Pop from the stack to go back to the parent level before starting a new branch
-                if len(self.stack) > 1: # Don't pop the root
-                    self.stack.pop()
-                
-            elif match_outcome:
-                outcome_text = match_outcome.group(1).strip()
-                # The outcome is a leaf node in the current parent's branches
-                parent_branches[current_branch_key] = outcome_text
-
-        return self.root
 
 # --- Example Usage ---
 def test():
