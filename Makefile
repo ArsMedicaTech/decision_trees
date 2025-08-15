@@ -1,7 +1,7 @@
 include .env
 
 
-.PHONY: create-notebook extract clean
+.PHONY: create-notebook extract clean git-config create-sagemaker-role delete-sagemaker-role
 
 
 NOTEBOOK_INSTANCE_NAME=llm-data-extraction-notebook
