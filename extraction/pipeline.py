@@ -32,10 +32,20 @@ def extract_from_html(html_content: str) -> str:
     soup = bs4.BeautifulSoup(html_content, 'html.parser')
     
     # Find all meaningful text blocks (paragraphs, headers, list items)
-    text_blocks = [tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])]
+    #text_blocks = [tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])]
     
     # Join them with double newlines to maintain structure for chunking
-    return "\n\n".join(text_blocks)
+    #return "\n\n".join(text_blocks)
+
+    # <section id="bodymatter" data-extent="bodymatter" property="articleBody" typeof="Text">
+    body_section = soup.find('section', {'id': 'bodymatter', 'property': 'articleBody'})
+
+    # <div role="paragraph">
+    paragraph_divs = body_section.find_all('div', {'role': 'paragraph'}) if body_section else []
+
+    print("[DEBUG] Total number of paragraphs found:", len(paragraph_divs))
+
+    return "\n\n".join([div.get_text(strip=True) for div in paragraph_divs]) if paragraph_divs else ""
 
 
 def fetch_html_via_url(url: str) -> str:

@@ -37,6 +37,8 @@ def main_single_article(article_name: str):
     # 2. Extract clean text from the HTML
     article_text = extract_from_html(html_content)
 
+    print("[DEBUG] Extracted article text length:", len(article_text))
+
     # 3. Run the full extraction pipeline
     final_decision_tree = run_extraction_pipeline(article_text)
 
