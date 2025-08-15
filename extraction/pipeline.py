@@ -42,7 +42,11 @@ def fetch_html_via_url(url: str) -> str:
     """
     Fetch HTML content from a given URL.
     """
-    response = requests.get(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.text
     else:
