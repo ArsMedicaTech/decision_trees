@@ -5,7 +5,7 @@ bs4==0.0.2
 certifi==2025.8.3
 charset-normalizer==3.4.3
 colorama==0.4.6
-docutils<0.22,>=0.20
+docutils<=0.19
 filelock==3.18.0
 fsspec==2025.7.0
 httpx>=0.25.0
