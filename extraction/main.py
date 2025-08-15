@@ -85,21 +85,13 @@ def get_response() -> str:
 
 def extract_from_html(html_content: str) -> List[Tuple[str, str, str]]:
     """
-    Extract medical fact triplets from HTML content.
+    Extract text from HTML content.
     """
     import bs4
 
     soup = bs4.BeautifulSoup(html_content, 'html.parser')
-    triplets = []
-
-    # Extract relevant information from the HTML
-    for element in soup.find_all('div', class_='triplet'):
-        subject = element.find('span', class_='subject').text
-        relation = element.find('span', class_='relation').text
-        obj = element.find('span', class_='object').text
-        triplets.append((subject, relation, obj))
-
-    return triplets
+    
+    return soup.text
 
 def fetch_html_via_url(url: str) -> str:
     """
