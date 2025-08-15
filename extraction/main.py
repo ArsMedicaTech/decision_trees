@@ -2,7 +2,7 @@
 Decision tree extraction from medical text.
 """
 from extraction.chunking import run_extraction_pipeline
-from extraction.pipeline import extract_from_html, fetch_html_via_url, load_topic_map
+from extraction.pipeline import extract_from_html, fetch_html_from_local_file, fetch_html_via_url, load_topic_map
 
 
 def write_decision_tree_to_file(decision_tree, file_path):
@@ -26,7 +26,13 @@ def main_single_article(article_name: str):
         exit(1)
 
     # 1. Fetch the article
-    html_content = fetch_html_via_url(url)
+    #html_content = fetch_html_via_url(url)
+
+    # Using locally saved article instead...
+    u = url.split('/')
+    doi = u[-2] + '_' + u[-1]
+    file_path = f"articles/{doi}.htm"
+    html_content = fetch_html_from_local_file(file_path)
 
     # 2. Extract clean text from the HTML
     article_text = extract_from_html(html_content)

@@ -53,6 +53,14 @@ def fetch_html_via_url(url: str) -> str:
         raise Exception(f"Failed to fetch data from {url}, status code: {response.status_code}")
 
 
+def fetch_html_from_local_file(file_path: str) -> str:
+    """
+    Fetch HTML content from a local file.
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 def load_topic_map() -> Dict[str, str]:
     """
     Load the topic map from a JSON file.
