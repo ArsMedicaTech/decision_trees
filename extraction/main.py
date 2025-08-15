@@ -5,7 +5,19 @@ from extraction.chunking import run_extraction_pipeline
 from extraction.pipeline import extract_from_html, fetch_html_via_url, load_topic_map
 
 
+def write_decision_tree_to_file(decision_tree, file_path):
+    with open(file_path, 'w') as f:
+        f.write(decision_tree)
+
+
 def main_single_article(article_name: str):
+    """
+    Process a single article to extract its decision tree.
+
+    NOTE: This assumes a mapping of one decision tree per article.
+    We may want to explore the possibility of multiple distinct trees per article,
+    or even trees that span multiple articles.
+    """
     topic_map = load_topic_map()
     url = topic_map.get(article_name)
 
@@ -24,6 +36,8 @@ def main_single_article(article_name: str):
 
     print("\n\n--- FINAL MERGED DECISION TREE ---")
     print(final_decision_tree)
+
+    write_decision_tree_to_file(final_decision_tree, f"decision_trees/{article_name}_tree.txt")
 
 
 def main_all():
