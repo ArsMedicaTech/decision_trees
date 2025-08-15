@@ -1,12 +1,10 @@
 """
 This class is responsible for parsing the output from the LLM and converting it into a structured format.
 """
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import re
 import json
-
-from lark import Lark, Transformer, v_args
 
 
 def sanitize_string(text: str) -> str:
@@ -15,68 +13,6 @@ def sanitize_string(text: str) -> str:
     to protect against copy-paste errors.
     """
     return text.replace('\xa0', ' ')
-
-
-decision_tree_grammar = r"""
-    ?tree: decision_node
-
-    ?decision_node: DECISION_POINT NEWLINE (_INDENT if_block+ _DEDENT) -> build_decision_node
-
-    ?if_block: IF_LINE NEWLINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
-
-    ?outcome: OUTCOME NEWLINE -> get_outcome_text
-
-    // --- Terminal Tokens ---
-    DECISION_POINT: "DECISION POINT:" /[^\n]+/
-    IF_LINE: /IF\s*'[^']+'\s*:/
-    OUTCOME: "OUTCOME:" /[^\n]+/
-
-    // --- Whitespace and Newlines ---
-    %import common.WS
-    %import common.NEWLINE
-    %ignore WS
-
-    // --- Indentation Handling ---
-    %declare _INDENT _DEDENT
-"""
-
-@v_args(inline=True)
-class TreeToJson(Transformer):
-    def build_decision_node(self, question, *branches):
-        # This method is called for a 'decision_node' rule.
-        # It receives the question text and all the processed child branches.
-        return {
-            "question": question.strip(),
-            "branches": dict(branches) # Convert list of (key, value) tuples into a dict
-        }
-
-    def build_if_block(self, if_line, child_node):
-        # This method is called for an 'if_block' rule.
-        # It receives the condition text (like 'Yes') and the processed child (either an outcome or another decision node).
-
-        # Extract the quoted key (e.g., 'Yes') from the IF_LINE token
-        match = re.search(r"'(.*?)'", if_line)
-        key = match.group(1) if match else None
-        return key, child_node
-
-    def get_outcome_text(self, text):
-        # This just cleans up the outcome text.
-        return text.strip()
-
-    # --- Token Processing ---
-    # These methods clean up the raw token values before they are passed to the rule methods above.
-    def DECISION_POINT(self, s):
-        return s.value.strip()
-    
-    def QUOTED_STRING(self, s):
-        return s[1:-1]
-
-    def IF_LINE(self, s):
-        # We pass the whole token string to the transformer method
-        return s.value
-
-    def OUTCOME(self, s):
-        return s.value.strip()
 
 
 class LLMTreeParser:
@@ -88,19 +24,9 @@ class LLMTreeParser:
     simply return structured outputs, but the LLM is much more specialized and
     this allows us to relieve some of the burden on the extraction process.
     """
+    
     def __init__(self):
-        # Create the parser instance with our grammar.
-        # The 'start' rule is 'tree', and we tell it to use Lark's indentation lexer.
-        clean_grammar = sanitize_string(decision_tree_grammar)
-
-        self.parser = Lark(
-            clean_grammar,
-            start='tree',
-            parser='lalr',
-            lexer='contextual'
-        )
-        
-        self.transformer = TreeToJson()
+        pass
     
     def parse(self, llm_output: str) -> Dict[Any, Any]:
         """
@@ -110,17 +36,105 @@ class LLMTreeParser:
             A dictionary representing the structured decision tree.
         """
         llm_output = sanitize_string(llm_output).expandtabs(4)
-
-        # The text needs a newline at the end for the indentation logic to work correctly.
-        llm_output = llm_output.strip() + "\n"
-
-        # 1. Parse the text into a tree object
-        parse_tree = self.parser.parse(llm_output)
-
-        # 2. Transform the tree into our final dictionary
-        structured_tree = self.transformer.transform(parse_tree)
-
-        return structured_tree
+        lines = llm_output.strip().split('\n')
+        
+        # Parse the decision tree structure
+        tree = self._parse_tree(lines)
+        return tree
+    
+    def _parse_tree(self, lines: List[str]) -> Dict[str, Any]:
+        """
+        Parse the entire decision tree using indentation levels.
+        """
+        if not lines:
+            return {}
+        
+        # Find the root decision point
+        root_idx = None
+        for i, line in enumerate(lines):
+            if line.strip().startswith('DECISION POINT:'):
+                root_idx = i
+                break
+        
+        if root_idx is None:
+            return {}
+        
+        return self._parse_node(lines, root_idx)
+    
+    def _parse_node(self, lines: List[str], start_idx: int) -> Dict[str, Any]:
+        """
+        Parse a decision node starting at start_idx.
+        """
+        # Extract the question
+        question_line = lines[start_idx].strip()
+        question = question_line.replace('DECISION POINT:', '').strip()
+        
+        # Find all IF blocks that belong to this decision node
+        branches = {}
+        current_idx = start_idx + 1
+        
+        while current_idx < len(lines):
+            line = lines[current_idx].strip()
+            
+            # Skip empty lines
+            if not line:
+                current_idx += 1
+                continue
+            
+            # Check if this is an IF line
+            if line.startswith('IF '):
+                # Extract the condition (e.g., 'Yes', 'No')
+                match = re.search(r"IF\s*'([^']+)'\s*:", line)
+                if match:
+                    condition = match.group(1)
+                    
+                    # Look ahead to see what comes after this IF
+                    next_idx = current_idx + 1
+                    if next_idx < len(lines):
+                        next_line = lines[next_idx].strip()
+                        
+                        if next_line.startswith('OUTCOME:'):
+                            # This is a simple outcome
+                            outcome_text = next_line.replace('OUTCOME:', '').strip()
+                            branches[condition] = outcome_text
+                            current_idx = next_idx + 1
+                        elif next_line.startswith('DECISION POINT:'):
+                            # This is a nested decision node
+                            nested_tree = self._parse_node(lines, next_idx)
+                            branches[condition] = nested_tree
+                            # Skip to after the nested tree
+                            current_idx = self._find_end_of_node(lines, next_idx)
+                        else:
+                            # Skip this IF block if we can't parse it
+                            current_idx += 1
+                    else:
+                        current_idx += 1
+                else:
+                    current_idx += 1
+            elif line.startswith('DECISION POINT:'):
+                # We've hit another decision point at the same level, so we're done with this one
+                break
+            else:
+                current_idx += 1
+        
+        return {
+            "question": question,
+            "branches": branches
+        }
+    
+    def _find_end_of_node(self, lines: List[str], start_idx: int) -> int:
+        """
+        Find the end of a decision node starting at start_idx.
+        This looks for the next decision point at the same indentation level.
+        """
+        current_idx = start_idx + 1
+        while current_idx < len(lines):
+            line = lines[current_idx].strip()
+            if line.startswith('DECISION POINT:'):
+                # Found another decision point, so we're done
+                break
+            current_idx += 1
+        return current_idx
 
 
 # --- Example Usage ---
@@ -128,43 +142,78 @@ def test():
     # The semi-structured text we expect from the LLM
     llm_output_text_simple = """
 DECISION POINT: Is valproic acid applicable?
-	IF 'Yes':
-		OUTCOME: Prescribe valproic acid.
-	IF 'No':
-		OUTCOME: Refer to neurologist.
+    IF 'Yes':
+        OUTCOME: Prescribe valproic acid.
+    IF 'No':
+        OUTCOME: Refer to neurologist.
 """
     
-    print(repr(llm_output_text_simple))
-    llm_output_text_simple = "\nDECISION POINT: Is valproic acid applicable?\n\tIF 'Yes':\n\t\tOUTCOME: Prescribe valproic acid.\n\tIF 'No':\n\t\tOUTCOME: Refer to neurologist.\n"
+    print("Simple test:")
     print(repr(llm_output_text_simple))
 
     llm_output_text = """
-    DECISION POINT: Does the patient have generalized tonic-clonic seizures?
-    - IF 'Yes':
+DECISION POINT: Does the patient have generalized tonic-clonic seizures?
+    IF 'Yes':
         DECISION POINT: Is valproic acid applicable?
-        - IF 'Yes':
+        IF 'Yes':
             OUTCOME: Prescribe valproic acid.
-        - IF 'No':
+        IF 'No':
             OUTCOME: Refer to neurologist.
-    - IF 'No':
+    IF 'No':
         DECISION POINT: Does the patient have myoclonic seizures?
-        - IF 'Yes':
+        IF 'Yes':
             OUTCOME: Do not use carbamazepine.
-        - IF 'No':
+        IF 'No':
             OUTCOME: Further evaluation needed.
-    """
+"""
 
-    print(repr(decision_tree_grammar))
-    print(repr(sanitize_string(decision_tree_grammar)))
+    # Test with a more complex nested structure
+    llm_output_text_complex = """
+DECISION POINT: What type of seizure does the patient have?
+    IF 'Generalized':
+        DECISION POINT: Is it tonic-clonic?
+        IF 'Yes':
+            DECISION POINT: Is valproic acid contraindicated?
+            IF 'Yes':
+                OUTCOME: Use alternative medication.
+            IF 'No':
+                OUTCOME: Prescribe valproic acid.
+        IF 'No':
+            OUTCOME: Consider other generalized seizure medications.
+    IF 'Focal':
+        DECISION POINT: Is it simple or complex?
+        IF 'Simple':
+            OUTCOME: Monitor and consider carbamazepine.
+        IF 'Complex':
+            OUTCOME: Refer to specialist.
+    IF 'Unknown':
+        OUTCOME: Conduct EEG and neurological evaluation.
+"""
+
+    print("\nComplex test:")
+    print(repr(llm_output_text))
+
+    print("\nVery complex test:")
+    print(repr(llm_output_text_complex))
 
     # Create a parser and process the text
     parser = LLMTreeParser()
-    decision_tree = parser.parse(llm_output_text_simple)
+    
+    print("\n--- Simple Tree ---")
+    decision_tree_simple = parser.parse(llm_output_text_simple)
+    print(json.dumps(decision_tree_simple, indent=4))
+    
+    print("\n--- Complex Tree ---")
+    decision_tree_complex = parser.parse(llm_output_text)
+    print(json.dumps(decision_tree_complex, indent=4))
+    
+    print("\n--- Very Complex Tree ---")
+    decision_tree_very_complex = parser.parse(llm_output_text_complex)
+    print(json.dumps(decision_tree_very_complex, indent=4))
 
-    # Print the resulting structured dictionary
-    print(json.dumps(decision_tree, indent=4))
 
-test()
+if __name__ == "__main__":
+    test()
 
 
 def parser_util(llm_output: str) -> Dict[Any, Any]:
