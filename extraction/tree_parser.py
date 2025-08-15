@@ -53,7 +53,10 @@ class TreeToJson(Transformer):
     def build_if_block(self, if_line, child_node):
         # This method is called for an 'if_block' rule.
         # It receives the condition text (like 'Yes') and the processed child (either an outcome or another decision node).
-        key = if_line.children[0]
+
+        # Extract the quoted key (e.g., 'Yes') from the IF_LINE token
+        match = re.search(r"'(.*?)'", if_line)
+        key = match.group(1) if match else None
         return key, child_node
 
     def get_outcome_text(self, text):
@@ -68,10 +71,9 @@ class TreeToJson(Transformer):
     def QUOTED_STRING(self, s):
         return s[1:-1]
 
-    def IF_CONDITION_UNUSED(self, s):
-        # We need to extract just the quoted string part from the IF_CONDITION token
-        match = re.search(r"'(.*?)'", s)
-        return match.group(1) if match else None
+    def IF_LINE(self, s):
+        # We pass the whole token string to the transformer method
+        return s.value
 
     def OUTCOME(self, s):
         return s.value.strip()
