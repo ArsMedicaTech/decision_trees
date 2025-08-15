@@ -46,4 +46,4 @@ clean:
 	aws sagemaker stop-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
 	aws sagemaker delete-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
 	aws sagemaker delete-notebook-instance-lifecycle-config $(CONFIG_NAME_ARG)
-
+	aws iam delete-role --role-name $(SAGEMAKER_ROLE_NAME)
