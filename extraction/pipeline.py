@@ -6,6 +6,9 @@ from typing import List, Tuple
 from extraction.model import construct_model
 from extraction.prompt import build_prompt
 
+import bs4
+import requests
+
 
 def get_response() -> str:
     model, tokenizer, generation_config = construct_model()
@@ -20,23 +23,19 @@ def get_response() -> str:
     return response_text
 
 
-
 def extract_from_html(html_content: str) -> List[Tuple[str, str, str]]:
     """
     Extract text from HTML content.
     """
-    import bs4
-
     soup = bs4.BeautifulSoup(html_content, 'html.parser')
     
     return soup.text
+
 
 def fetch_html_via_url(url: str) -> str:
     """
     Fetch HTML content from a given URL.
     """
-    import requests
-
     response = requests.get(url)
     if response.status_code == 200:
         return response.text
