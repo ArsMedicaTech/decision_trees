@@ -2,17 +2,12 @@
 Decision tree extraction from medical text.
 """
 from extraction.chunking import run_extraction_pipeline
-from extraction.tree_parser import parser_util
-from extraction.pipeline import extract_from_html, fetch_html_via_url, get_response, load_topic_map
+from extraction.pipeline import extract_from_html, fetch_html_via_url, load_topic_map
 
 
-if __name__ == "__main__":
-    response = get_response()
-    print(response)
-
+def main_single_article(article_name: str):
     topic_map = load_topic_map()
-    
-    url = topic_map.get('High Blood Pressure')
+    url = topic_map.get(article_name)
 
     if not url:
         print("No URL found for the specified topic.")
@@ -30,8 +25,20 @@ if __name__ == "__main__":
     print("\n\n--- FINAL MERGED DECISION TREE ---")
     print(final_decision_tree)
 
-    parsed_data = parser_util(response)
-    print(parsed_data)
+
+def main_all():
+    topic_map = load_topic_map()
+
+    article_names = list(topic_map.keys())
+
+    for article_name in article_names:
+        main_single_article(article_name)
+
+
+if __name__ == "__main__":
+    main_single_article("High Blood Pressure")
+
+
 
 # Xformers is not installed correctly. If you want to use memory_efficient_attention to accelerate training use the following command to install Xformers
 # pip install xformers.
