@@ -190,11 +190,31 @@ DECISION POINT: What type of seizure does the patient have?
         OUTCOME: Conduct EEG and neurological evaluation.
 """
 
+    # One more complex nested example
+    llm_output_text_complex_2 = """
+DECISION POINT: What are the characteristics of the patient's acute chest pain?
+    IF 'Crushing and radiating to the arm or jaw':
+        DECISION POINT: Does the patient have a known aspirin allergy?
+            IF 'Yes':
+                OUTCOME: Use clopidogrel and begin MONA protocol for suspected AMI.
+            IF 'No':
+                OUTCOME: Use aspirin and begin MONA protocol for suspected AMI.
+    IF 'Sharp, pleuritic, and with shortness of breath':
+        OUTCOME: Order a CT angiogram to investigate for Pulmonary Embolism.
+    IF 'Burning, worse when lying down, and related to meals':
+        OUTCOME: Recommend a trial of antacids for suspected GERD.
+    IF 'Other':
+        OUTCOME: Perform a standard workup with an EKG and cardiac enzymes.
+"""
+
     print("\nComplex test:")
     print(repr(llm_output_text))
 
     print("\nVery complex test:")
     print(repr(llm_output_text_complex))
+
+    print("\nVery complex test:")
+    print(repr(llm_output_text_complex_2))
 
     # Create a parser and process the text
     parser = LLMTreeParser()
@@ -210,6 +230,10 @@ DECISION POINT: What type of seizure does the patient have?
     print("\n--- Very Complex Tree ---")
     decision_tree_very_complex = parser.parse(llm_output_text_complex)
     print(json.dumps(decision_tree_very_complex, indent=4))
+
+    print("\n--- Very Complex Tree 2 ---")
+    decision_tree_very_complex_2 = parser.parse(llm_output_text_complex_2)
+    print(json.dumps(decision_tree_very_complex_2, indent=4))
 
 
 if __name__ == "__main__":
