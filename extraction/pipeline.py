@@ -1,7 +1,9 @@
 """
 Pipeline helper functions.
 """
-from typing import List, Tuple
+from typing import Dict, List, Tuple
+
+import json
 
 from extraction.model import construct_model
 from extraction.prompt import build_prompt
@@ -41,3 +43,12 @@ def fetch_html_via_url(url: str) -> str:
         return response.text
     else:
         raise Exception(f"Failed to fetch data from {url}, status code: {response.status_code}")
+
+
+def load_topic_map() -> Dict[str, str]:
+    """
+    Load the topic map from a JSON file.
+    """
+    with open("extraction/topic_map.json", "r") as f:
+        topic_map = json.load(f)
+    return topic_map
