@@ -31,7 +31,7 @@ def main_single_article(article_name: str):
     # Using locally saved article instead...
     u = url.split('/')
     doi = u[-2] + '_' + u[-1]
-    file_path = f"articles/{doi}.htm"
+    file_path = f"extraction/articles/{doi}.htm"
     html_content = fetch_html_from_local_file(file_path)
 
     # 2. Extract clean text from the HTML
