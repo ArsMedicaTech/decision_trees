@@ -58,7 +58,7 @@ class LLMTreeParser:
         question_line = lines[start_idx].strip()
         question = question_line.replace('DECISION POINT:', '').strip()
         
-        node = {"question": question, "branches": {}}
+        node: Dict[str, Any] = {"question": question, "branches": {}}
         
         # --- 2. Iterate through subsequent lines to find children ---
         current_idx = start_idx + 1
@@ -118,7 +118,7 @@ class LLMTreeParser:
         if root_idx is None:
             return {}
         
-        return self._parse_node(lines, root_idx)
+        return self._parse_node(lines, root_idx)[0]
     
     def _find_end_of_node(self, lines: List[str], start_idx: int) -> int:
         """
