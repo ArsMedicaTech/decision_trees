@@ -153,16 +153,16 @@ DECISION POINT: Is valproic acid applicable?
 DECISION POINT: Does the patient have generalized tonic-clonic seizures?
     IF 'Yes':
         DECISION POINT: Is valproic acid applicable?
-        IF 'Yes':
-            OUTCOME: Prescribe valproic acid.
-        IF 'No':
-            OUTCOME: Refer to neurologist.
+            IF 'Yes':
+                OUTCOME: Prescribe valproic acid.
+            IF 'No':
+                OUTCOME: Refer to neurologist.
     IF 'No':
         DECISION POINT: Does the patient have myoclonic seizures?
-        IF 'Yes':
-            OUTCOME: Do not use carbamazepine.
-        IF 'No':
-            OUTCOME: Further evaluation needed.
+            IF 'Yes':
+                OUTCOME: Do not use carbamazepine.
+            IF 'No':
+                OUTCOME: Further evaluation needed.
 """
 
     # Test with a more complex nested structure
@@ -170,20 +170,20 @@ DECISION POINT: Does the patient have generalized tonic-clonic seizures?
 DECISION POINT: What type of seizure does the patient have?
     IF 'Generalized':
         DECISION POINT: Is it tonic-clonic?
-        IF 'Yes':
-            DECISION POINT: Is valproic acid contraindicated?
             IF 'Yes':
-                OUTCOME: Use alternative medication.
+                DECISION POINT: Is valproic acid contraindicated?
+                    IF 'Yes':
+                        OUTCOME: Use alternative medication.
+                    IF 'No':
+                        OUTCOME: Prescribe valproic acid.
             IF 'No':
-                OUTCOME: Prescribe valproic acid.
-        IF 'No':
-            OUTCOME: Consider other generalized seizure medications.
+                OUTCOME: Consider other generalized seizure medications.
     IF 'Focal':
         DECISION POINT: Is it simple or complex?
-        IF 'Simple':
-            OUTCOME: Monitor and consider carbamazepine.
-        IF 'Complex':
-            OUTCOME: Refer to specialist.
+            IF 'Simple':
+                OUTCOME: Monitor and consider carbamazepine.
+            IF 'Complex':
+                OUTCOME: Refer to specialist.
     IF 'Unknown':
         OUTCOME: Conduct EEG and neurological evaluation.
 """
