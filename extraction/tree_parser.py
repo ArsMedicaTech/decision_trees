@@ -8,6 +8,15 @@ import json
 
 from lark import Lark, Transformer, v_args
 
+
+def sanitize_string(text: str) -> str:
+    """
+    Programmatically replaces non-breaking spaces (\xa0) with regular spaces
+    to protect against copy-paste errors.
+    """
+    return text.replace('\xa0', ' ')
+
+
 decision_tree_grammar = r"""
     ?tree: decision_node
 
@@ -80,8 +89,10 @@ class LLMTreeParser:
     def __init__(self):
         # Create the parser instance with our grammar.
         # The 'start' rule is 'tree', and we tell it to use Lark's indentation lexer.
+        clean_grammar = sanitize_string(decision_tree_grammar)
+
         self.parser = Lark(
-            decision_tree_grammar,
+            clean_grammar,
             start='tree',
             parser='lalr',
             lexer='contextual'
@@ -96,6 +107,8 @@ class LLMTreeParser:
         Returns:
             A dictionary representing the structured decision tree.
         """
+        llm_output = sanitize_string(llm_output).expandtabs(4)
+
         # The text needs a newline at the end for the indentation logic to work correctly.
         llm_output = llm_output.strip() + "\n"
 
