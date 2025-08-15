@@ -1,9 +1,18 @@
-""""""
+"""
+Decision tree extraction from medical text.
+"""
+from typing import List, Tuple, Dict, TypedDict
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
 
 
-def construct_model():
+class Message(TypedDict):
+    role: str
+    content: str
+
+
+def construct_model() -> Tuple[AutoModelForCausalLM, AutoTokenizer, GenerationConfig]:
     i = input("Warning. This will download model weights [roughly 15GB]. Proceed? (y/n)")
     if i.lower() != 'y':
         print("Model download aborted.")
@@ -26,13 +35,10 @@ def construct_model():
 
     return model, tokenizer, generation_config
 
+# Medical text from the article's example
+tonic_clonic_seizures_example = """For patients with generalized tonic-clonic seizures, valproic acid is applicable. If not applicable, and the patient has myoclonic seizures or suspected juvenile myoclonic epilepsy, carbamazepine should not be used."""
 
-def build_prompt():
-    # Medical text from the article's example
-    medical_text = """
-    For patients with generalized tonic-clonic seizures, valproic acid is applicable. If not applicable, and the patient has myoclonic seizures or suspected juvenile myoclonic epilepsy, carbamazepine should not be used.
-    """
-
+def build_prompt(medical_text: str = tonic_clonic_seizures_example) -> List[Message]:
     # This prompt guides the model through the Chain-of-Thought process
     prompt_template = f"""
     You are an expert at extracting medical decision trees (MDTs) from text and formatting them.
@@ -56,14 +62,14 @@ def build_prompt():
     """
 
     # Structure the input as a list of messages
-    messages = [
-        {"role": "user", "content": prompt_template}
+    messages: List[Message] = [
+        Message(role="user", content=prompt_template)
     ]
 
     return messages
 
 
-def get_response():
+def get_response() -> str:
     model, tokenizer, generation_config = construct_model()
     if model is None:
         return "Model construction failed."
@@ -77,7 +83,7 @@ def get_response():
 
 
 
-def extract_from_html(html_content: str) -> list[tuple[str, str, str]]:
+def extract_from_html(html_content: str) -> List[Tuple[str, str, str]]:
     """
     Extract medical fact triplets from HTML content.
     """
