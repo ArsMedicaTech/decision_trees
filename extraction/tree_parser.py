@@ -1,7 +1,7 @@
 """
 This class is responsible for parsing the output from the LLM and converting it into a structured format.
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import re
 import json
@@ -26,21 +26,80 @@ class LLMTreeParser:
     """
     
     def __init__(self):
-        pass
+        self.decision_pattern = re.compile(r"^(?P<indent>\s*)DECISION POINT:\s*(?P<question>.*)")
+        self.if_pattern = re.compile(r"^(?P<indent>\s*)IF\s*'(?P<condition>[^']+)'\s*:")
+        self.outcome_pattern = re.compile(r"^(?P<indent>\s*)OUTCOME:\s*(?P<outcome>.*)")
     
+    def get_indent(self, line: str) -> int:
+        """Returns the indentation level of a line."""
+        return len(line) - len(line.lstrip(' '))
+
     def parse(self, llm_output: str) -> Dict[Any, Any]:
         """
         Parses the full multi-line output from the LLM.
-
-        Returns:
-            A dictionary representing the structured decision tree.
         """
         llm_output = sanitize_string(llm_output).expandtabs(4)
         lines = llm_output.strip().split('\n')
         
-        # Parse the decision tree structure
-        tree = self._parse_tree(lines)
+        if not lines:
+            return {}
+        
+        # The main call to the recursive parser starts at index 0.
+        tree, _ = self._parse_node(lines, 0)
         return tree
+    
+    def _parse_node(self, lines: List[str], start_idx: int) -> Tuple[Dict[str, Any], int]:
+        """
+        Recursively parses a node and its children, respecting indentation.
+        Returns the parsed node and the index of the next line to process.
+        """
+        # --- 1. Get the base indentation and question for this node ---
+        base_indent = self.get_indent(lines[start_idx])
+        question_line = lines[start_idx].strip()
+        question = question_line.replace('DECISION POINT:', '').strip()
+        
+        node = {"question": question, "branches": {}}
+        
+        # --- 2. Iterate through subsequent lines to find children ---
+        current_idx = start_idx + 1
+        while current_idx < len(lines):
+            line = lines[current_idx]
+            line_indent = self.get_indent(line)
+            
+            # --- 3. If a line is not indented further, this node is finished ---
+            if line_indent <= base_indent and line.strip():
+                break # Return control to the parent call
+            
+            if_match = self.if_pattern.match(line)
+            if if_match:
+                condition = if_match.group("condition")
+                
+                # Look ahead to the next line to see what kind of child it is
+                next_line_idx = current_idx + 1
+                if next_line_idx < len(lines):
+                    next_line = lines[next_line_idx]
+                    
+                    # Child is an OUTCOME
+                    outcome_match = self.outcome_pattern.match(next_line)
+                    if outcome_match:
+                        node["branches"][condition] = outcome_match.group("outcome")
+                        current_idx += 2 # Move past the IF and the OUTCOME
+                        continue
+                    
+                    # Child is a nested DECISION POINT
+                    decision_match = self.decision_pattern.match(next_line)
+                    if decision_match:
+                        # Recursively parse the nested node
+                        nested_node, end_idx = self._parse_node(lines, next_line_idx)
+                        node["branches"][condition] = nested_node
+                        current_idx = end_idx # Jump past the entire parsed nested node
+                        continue
+
+            # If the line is not a child or is unparsable, just move to the next one
+            current_idx += 1
+
+        # --- 4. Return the completed node and the next index to process ---
+        return node, current_idx
     
     def _parse_tree(self, lines: List[str]) -> Dict[str, Any]:
         """
@@ -60,67 +119,6 @@ class LLMTreeParser:
             return {}
         
         return self._parse_node(lines, root_idx)
-    
-    def _parse_node(self, lines: List[str], start_idx: int) -> Dict[str, Any]:
-        """
-        Parse a decision node starting at start_idx.
-        """
-        # Extract the question
-        question_line = lines[start_idx].strip()
-        question = question_line.replace('DECISION POINT:', '').strip()
-        
-        # Find all IF blocks that belong to this decision node
-        branches = {}
-        current_idx = start_idx + 1
-        
-        while current_idx < len(lines):
-            line = lines[current_idx].strip()
-            
-            # Skip empty lines
-            if not line:
-                current_idx += 1
-                continue
-            
-            # Check if this is an IF line
-            if line.startswith('IF '):
-                # Extract the condition (e.g., 'Yes', 'No')
-                match = re.search(r"IF\s*'([^']+)'\s*:", line)
-                if match:
-                    condition = match.group(1)
-                    
-                    # Look ahead to see what comes after this IF
-                    next_idx = current_idx + 1
-                    if next_idx < len(lines):
-                        next_line = lines[next_idx].strip()
-                        
-                        if next_line.startswith('OUTCOME:'):
-                            # This is a simple outcome
-                            outcome_text = next_line.replace('OUTCOME:', '').strip()
-                            branches[condition] = outcome_text
-                            current_idx = next_idx + 1
-                        elif next_line.startswith('DECISION POINT:'):
-                            # This is a nested decision node
-                            nested_tree = self._parse_node(lines, next_idx)
-                            branches[condition] = nested_tree
-                            # Skip to after the nested tree
-                            current_idx = self._find_end_of_node(lines, next_idx)
-                        else:
-                            # Skip this IF block if we can't parse it
-                            current_idx += 1
-                    else:
-                        current_idx += 1
-                else:
-                    current_idx += 1
-            elif line.startswith('DECISION POINT:'):
-                # We've hit another decision point at the same level, so we're done with this one
-                break
-            else:
-                current_idx += 1
-        
-        return {
-            "question": question,
-            "branches": branches
-        }
     
     def _find_end_of_node(self, lines: List[str], start_idx: int) -> int:
         """
