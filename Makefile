@@ -47,3 +47,11 @@ clean:
 	aws sagemaker delete-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
 	aws sagemaker delete-notebook-instance-lifecycle-config $(CONFIG_NAME_ARG)
 	aws iam delete-role --role-name $(SAGEMAKER_ROLE_NAME)
+
+
+git-config:
+	git config --global user.name "$(USER_NAME)"
+	git config --global user.email "$(USER_EMAIL)"
+	git add $(NOTEBOOK_NAME).ipynb
+	git commit -m "Add initial data exploration notebook."
+	git push
