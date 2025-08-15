@@ -35,19 +35,24 @@ def build_prompt():
 
     # This prompt guides the model through the Chain-of-Thought process
     prompt_template = f"""
-    You are an expert at extracting medical decision trees (MDTs) from text.
-    Follow these steps carefully:
-    1.  First, extract all medical fact triplets (subject, relation, object) from the text.
-    2.  Second, use these triplets to build a medical decision tree in a structured format.
+    You are an expert at extracting medical decision trees (MDTs) from text and formatting them.
 
     Here is the medical text:
     "{medical_text}"
 
-    ### Step 1: Extracted Triplets
-    [Your thinking process for extracting triplets starts here...]
+    Follow these steps carefully:
+    1.  First, identify all **Decision Points** (questions to be asked) and final **Outcomes** (conclusions or actions).
+    2.  Second, structure this logic into a simple tree. Use "IF/ELSE IF/ELSE" for branches.
 
-    ### Step 2: Medical Decision Tree
-    [Your thinking process for building the tree starts here...]
+    EXAMPLE:
+    Text: "For headaches, if the patient has a fever, check for meningitis. Otherwise, recommend rest."
+    Output:
+    DECISION POINT: Does the patient have a fever?
+    - IF 'Yes': OUTCOME: Check for meningitis.
+    - IF 'No': OUTCOME: Recommend rest.
+
+    YOUR TASK:
+    [Your thinking process starts here...]
     """
 
     # Structure the input as a list of messages
