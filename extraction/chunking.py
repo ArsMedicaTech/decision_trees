@@ -81,11 +81,13 @@ def run_extraction_pipeline(full_text: str) -> str:
         return "Model construction failed."
 
     # 1. Chunk the document
+    print("[DEBUG] Chunking document...")
     text_chunks = chunk_text(full_text)
     
     # 2. Process each chunk to get partial trees
     partial_trees = []
     for chunk in text_chunks:
+        print(f"[DEBUG] Processing chunk (length: {len(chunk)} chars)")
         result = process_chunk(chunk, model, tokenizer, generation_config)
         if result:
             partial_trees.append(result)
