@@ -11,30 +11,22 @@ from lark import Lark, Transformer, v_args
 decision_tree_grammar = r"""
     ?tree: decision_node
 
-    // THE FIX: A decision_node is a DECISION_POINT line FOLLOWED BY if_blocks.
-    // The rigid _INDENT/_DEDENT wrapper has been removed from this top-level rule.
-    ?decision_node: DECISION_POINT if_block+ -> build_decision_node
+    ?decision_node: DECISION_POINT (_INDENT if_block+ _DEDENT) -> build_decision_node
 
-    // An if_block still correctly uses indentation for its OWN children.
-    // ?if_block: "IF" QUOTED_STRING ":" (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
-    ?if_block: "IF" QUOTED_STRING ":" NEWLINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
+    ?if_block: IF_LINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
 
-    // --- Helper Rules & Terminals ---
-    IF_LINE: "IF" QUOTED_STRING ":"
+    ?outcome: OUTCOME -> get_outcome_text
 
-    // ?outcome: OUTCOME -> get_outcome_text
-    ?outcome: OUTCOME NEWLINE -> get_outcome_text
-
-    // --- Terminal Tokens ---
-    // We add NEWLINE to the main tokens to help the parser distinguish complete lines.
+    // --- Terminal Tokens (The "Ingredients") ---
     DECISION_POINT: "DECISION POINT:" /[^\n]+/
+    IF_LINE: /IF\s*'[^']+'\s*:/
     OUTCOME: "OUTCOME:" /[^\n]+/
-    QUOTED_STRING: /'[^']+'/
 
     // --- Whitespace and Newlines ---
     %import common.WS
     %import common.NEWLINE
     %ignore WS
+    %ignore NEWLINE
 
     // --- Indentation Handling ---
     %declare _INDENT _DEDENT
