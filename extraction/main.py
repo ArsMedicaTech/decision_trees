@@ -2,7 +2,7 @@
 Decision tree extraction from medical text.
 """
 from extraction.tree_parser import parser_util
-from pipeline import get_response, load_topic_map
+from extraction.pipeline import get_response, load_topic_map
 
 
 
