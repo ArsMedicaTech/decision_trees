@@ -11,13 +11,13 @@ from lark import Lark, Transformer, v_args
 decision_tree_grammar = r"""
     ?tree: decision_node
 
-    ?decision_node: DECISION_POINT (_INDENT if_block+ _DEDENT) -> build_decision_node
+    ?decision_node: DECISION_POINT NEWLINE (_INDENT if_block+ _DEDENT) -> build_decision_node
 
-    ?if_block: IF_LINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
+    ?if_block: IF_LINE NEWLINE (_INDENT (outcome | decision_node) _DEDENT) -> build_if_block
 
-    ?outcome: OUTCOME -> get_outcome_text
+    ?outcome: OUTCOME NEWLINE -> get_outcome_text
 
-    // --- Terminal Tokens (The "Ingredients") ---
+    // --- Terminal Tokens ---
     DECISION_POINT: "DECISION POINT:" /[^\n]+/
     IF_LINE: /IF\s*'[^']+'\s*:/
     OUTCOME: "OUTCOME:" /[^\n]+/
@@ -26,7 +26,6 @@ decision_tree_grammar = r"""
     %import common.WS
     %import common.NEWLINE
     %ignore WS
-    %ignore NEWLINE
 
     // --- Indentation Handling ---
     %declare _INDENT _DEDENT
