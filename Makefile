@@ -18,22 +18,22 @@ SAGEMAKER_ROLE_NAME := SageMaker-Execution-Role
 SAGEMAKER_POLICY_ARN := arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
 
 create-sagemaker-role:
-    @echo "Creating IAM role: $(SAGEMAKER_ROLE_NAME)..."
-    @aws iam create-role --role-name $(SAGEMAKER_ROLE_NAME) --assume-role-policy-document file://extraction/sagemaker-iam.json
-    
-    @echo "Attaching policy: AmazonSageMakerFullAccess..."
-    @aws iam attach-role-policy --role-name $(SAGEMAKER_ROLE_NAME) --policy-arn $(SAGEMAKER_POLICY_ARN)
-    
-    @echo "Role created successfully. Use this name in your other commands."
+	@echo "Creating IAM role: $(SAGEMAKER_ROLE_NAME)..."
+	@aws iam create-role --role-name $(SAGEMAKER_ROLE_NAME) --assume-role-policy-document file://extraction/sagemaker-iam.json
+	
+	@echo "Attaching policy: AmazonSageMakerFullAccess..."
+	@aws iam attach-role-policy --role-name $(SAGEMAKER_ROLE_NAME) --policy-arn $(SAGEMAKER_POLICY_ARN)
+	
+	@echo "Role created successfully. Use this name in your other commands."
 
 delete-sagemaker-role:
-    @echo "Detaching policy from $(SAGEMAKER_ROLE_NAME)..."
-    @aws iam detach-role-policy --role-name $(SAGEMAKER_ROLE_NAME) --policy-arn $(SAGEMAKER_POLICY_ARN)
-        
-    @echo "Deleting IAM role: $(SAGEMAKER_ROLE_NAME)..."
-    @aws iam delete-role --role-name $(SAGEMAKER_ROLE_NAME)
-    
-    @echo "Role deleted successfully."
+	@echo "Detaching policy from $(SAGEMAKER_ROLE_NAME)..."
+	@aws iam detach-role-policy --role-name $(SAGEMAKER_ROLE_NAME) --policy-arn $(SAGEMAKER_POLICY_ARN)
+	    
+	@echo "Deleting IAM role: $(SAGEMAKER_ROLE_NAME)..."
+	@aws iam delete-role --role-name $(SAGEMAKER_ROLE_NAME)
+	
+	@echo "Role deleted successfully."
 
 
 create-notebook:
