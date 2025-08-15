@@ -9,7 +9,6 @@ NOTEBOOK_INSTANCE_NAME=llm-data-extraction-notebook
 CONFIG_NAME=clone-llm-repo-config
 CONFIG_NAME_ARG=--notebook-instance-lifecycle-config-name "$(CONFIG_NAME)"
 
-ON_CREATE="$(cat on-create.sh | base64)"
 
 INSTANCE_SPECS=--instance-type "$(INSTANCE_TYPE)" --volume-size-in-gb $(VOLUME_SIZE)
 INSTANCE_NAMES=--notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)" --lifecycle-config-name "$(CONFIG_NAME)"
