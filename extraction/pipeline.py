@@ -25,13 +25,17 @@ def get_response() -> str:
     return response_text
 
 
-def extract_from_html(html_content: str) -> List[Tuple[str, str, str]]:
+def extract_from_html(html_content: str) -> str:
     """
-    Extract text from HTML content.
+    Extracts structured text from HTML, preserving paragraph breaks.
     """
     soup = bs4.BeautifulSoup(html_content, 'html.parser')
     
-    return soup.text
+    # Find all meaningful text blocks (paragraphs, headers, list items)
+    text_blocks = [tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])]
+    
+    # Join them with double newlines to maintain structure for chunking
+    return "\n\n".join(text_blocks)
 
 
 def fetch_html_via_url(url: str) -> str:
