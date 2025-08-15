@@ -37,10 +37,10 @@ delete-sagemaker-role:
 
 
 create-notebook:
-	aws sagemaker create-notebook-instance --role-arn "$(ROLE_ARN)" $(INSTANCE_NAMES) $(INSTANCE_SPECS)
+	aws sagemaker create-notebook-instance --role-arn "$(ROLE_ARN)" $(INSTANCE_NAMES) $(INSTANCE_SPECS) || true
 
 extract: create-notebook
-	aws sagemaker create-notebook-instance-lifecycle-config $(CONFIG_NAME) --on-create Content=$(ON_CREATE)
+	aws sagemaker create-notebook-instance-lifecycle-config $(CONFIG_NAME_ARG) --on-create Content=$(ON_CREATE)
 
 clean:
 	aws sagemaker stop-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
