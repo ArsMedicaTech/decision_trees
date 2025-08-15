@@ -32,7 +32,7 @@ def process_chunk(text_chunk: str, model, tokenizer, generation_config) -> str:
     # Simple filter to check if the model found a tree
     if "DECISION POINT" not in response_text and "OUTCOME" not in response_text:
         print("--> No decision tree found in this chunk.")
-        return None
+        return ""
 
     print("--> Found partial decision tree.")
     return response_text
