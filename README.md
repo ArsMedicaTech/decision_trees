@@ -109,3 +109,13 @@ def decision_tree_lookup(tree: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         "path_taken": path_taken
     }
 ```
+
+## Extraction
+
+Windows PowerShell:
+1. Enter the following: `[System.Convert]::ToBase64String([System.IO.File]::ReadAllBytes("extraction/on-create.sh"))`
+2. Paste output of that into `.env` as `ON_CREATE`.
+
+Linux:
+1. Enter the following: `base64 extraction/on-create.sh`
+2. Paste output of that into `.env` as `ON_CREATE`.
