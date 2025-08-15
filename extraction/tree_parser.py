@@ -124,6 +124,18 @@ class LLMTreeParser:
 # --- Example Usage ---
 def test():
     # The semi-structured text we expect from the LLM
+    llm_output_text_simple = """
+DECISION POINT: Is valproic acid applicable?
+	IF 'Yes':
+		OUTCOME: Prescribe valproic acid.
+	IF 'No':
+		OUTCOME: Refer to neurologist.
+"""
+    
+    print(repr(llm_output_text_simple))
+    llm_output_text_simple = "\nDECISION POINT: Is valproic acid applicable?\n\tIF 'Yes':\n\t\tOUTCOME: Prescribe valproic acid.\n\tIF 'No':\n\t\tOUTCOME: Refer to neurologist.\n"
+    print(repr(llm_output_text_simple))
+
     llm_output_text = """
     DECISION POINT: Does the patient have generalized tonic-clonic seizures?
     - IF 'Yes':
@@ -140,12 +152,17 @@ def test():
             OUTCOME: Further evaluation needed.
     """
 
+    print(repr(decision_tree_grammar))
+    print(repr(sanitize_string(decision_tree_grammar)))
+
     # Create a parser and process the text
     parser = LLMTreeParser()
-    decision_tree = parser.parse(llm_output_text)
+    decision_tree = parser.parse(llm_output_text_simple)
 
     # Print the resulting structured dictionary
     print(json.dumps(decision_tree, indent=4))
+
+test()
 
 
 def parser_util(llm_output: str) -> Dict[Any, Any]:
