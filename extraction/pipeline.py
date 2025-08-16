@@ -25,24 +25,50 @@ def get_response() -> str:
     return response_text
 
 
-def extract_from_html(html_content: str) -> List[Tuple[str, str, str]]:
+def extract_from_html(html_content: str) -> str:
     """
-    Extract text from HTML content.
+    Extracts structured text from HTML, preserving paragraph breaks.
     """
     soup = bs4.BeautifulSoup(html_content, 'html.parser')
     
-    return soup.text
+    # Find all meaningful text blocks (paragraphs, headers, list items)
+    #text_blocks = [tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])]
+    
+    # Join them with double newlines to maintain structure for chunking
+    #return "\n\n".join(text_blocks)
+
+    # <section id="bodymatter" data-extent="bodymatter" property="articleBody" typeof="Text">
+    body_section = soup.find('section', {'id': 'bodymatter', 'property': 'articleBody'})
+
+    # <div role="paragraph">
+    paragraph_divs = body_section.find_all('div', {'role': 'paragraph'}) if body_section else []
+
+    print("[DEBUG] Total number of paragraphs found:", len(paragraph_divs))
+
+    return "\n\n".join([div.get_text(strip=True) for div in paragraph_divs]) if paragraph_divs else ""
 
 
 def fetch_html_via_url(url: str) -> str:
     """
     Fetch HTML content from a given URL.
     """
-    response = requests.get(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.text
     else:
         raise Exception(f"Failed to fetch data from {url}, status code: {response.status_code}")
+
+
+def fetch_html_from_local_file(file_path: str) -> str:
+    """
+    Fetch HTML content from a local file.
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def load_topic_map() -> Dict[str, str]:
