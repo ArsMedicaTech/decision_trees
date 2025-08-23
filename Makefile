@@ -43,9 +43,12 @@ extract: create-notebook
 	aws sagemaker create-notebook-instance-lifecycle-config $(CONFIG_NAME_ARG) --on-create Content=$(ON_CREATE)
 
 clean:
-	aws sagemaker stop-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
+	aws sagemaker stop-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)" || true
+	@echo "Waiting for notebook instance to stop..."
+	timeout 240
 	aws sagemaker delete-notebook-instance --notebook-instance-name "$(NOTEBOOK_INSTANCE_NAME)"
 	aws sagemaker delete-notebook-instance-lifecycle-config $(CONFIG_NAME_ARG)
+	aws iam detach-role-policy --role-name $(SAGEMAKER_ROLE_NAME) --policy-arn $(SAGEMAKER_POLICY_ARN)
 	aws iam delete-role --role-name $(SAGEMAKER_ROLE_NAME)
 
 
