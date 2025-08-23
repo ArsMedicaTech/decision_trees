@@ -36,7 +36,7 @@ delete-sagemaker-role:
 	@echo "Role deleted successfully."
 
 
-create-notebook:
+create-notebook: create-sagemaker-role
 	aws sagemaker create-notebook-instance --role-arn "$(ROLE_ARN)" $(INSTANCE_NAMES) $(INSTANCE_SPECS) || true
 
 extract: create-notebook
