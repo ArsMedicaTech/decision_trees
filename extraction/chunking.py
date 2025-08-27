@@ -31,7 +31,7 @@ def process_chunk(text_chunk: str, model, tokenizer, generation_config, debug: b
     response_text = model.chat(tokenizer, messages, generation_config=generation_config)
 
     if debug:
-        with open('log.txt', 'a') as f:
+        with open('log.txt', 'a', encoding='utf-8') as f:
             f.write(msg + "\n")
             f.write("----- MEDICAL TEXT CHUNK -----\n")
             f.write(text_chunk + "\n")
@@ -73,7 +73,7 @@ def synthesize_trees(partial_trees: List[str], model, tokenizer, generation_conf
     and ensure the final output is a single, coherent tree.
     """
 
-    with open('full_synthesis_log.txt', 'a') as f:
+    with open('full_synthesis_log.txt', 'a', encoding='utf-8') as f:
         f.write(synthesizer_prompt + "\n")
 
     messages: List[Message] = [
