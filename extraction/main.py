@@ -54,7 +54,7 @@ def main_all():
     article_names = list(topic_map.keys())
 
     for article_name in article_names:
-        main_single_article(article_name)
+        main_single_article(article_name, debug=True)
 
 
 if __name__ == "__main__":
