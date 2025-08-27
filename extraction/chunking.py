@@ -50,6 +50,7 @@ def process_chunk(text_chunk: str, model, tokenizer, generation_config, debug: b
 
 # --- Step 3: Synthesizing (Reduce) Function ---
 def synthesize_trees(partial_trees: List[str], model, tokenizer, generation_config) -> str:
+    # TODO: Use a model with a larger context window for this task...
     """
     Merges a list of partial decision trees into a single, coherent tree.
     """
@@ -71,13 +72,17 @@ def synthesize_trees(partial_trees: List[str], model, tokenizer, generation_conf
     de-duplicated master decision tree. Connect related branches, resolve any redundancies,
     and ensure the final output is a single, coherent tree.
     """
-    
+
+    with open('full_synthesis_log.txt', 'a') as f:
+        f.write(synthesizer_prompt + "\n")
+
     messages: List[Message] = [
         Message(role="user", content=synthesizer_prompt)
     ]
     
-    final_tree = model.chat(tokenizer, messages, generation_config=generation_config)
-    return final_tree
+    #final_tree = model.chat(tokenizer, messages, generation_config=generation_config)
+    #return final_tree
+    return "Outputed to local file for processing by a larger model."
 
 
 # --- Main Orchestrator ---
