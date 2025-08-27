@@ -10,7 +10,7 @@ def write_decision_tree_to_file(decision_tree, file_path):
         f.write(decision_tree)
 
 
-def main_single_article(article_name: str):
+def main_single_article(article_name: str, debug: bool = False):
     """
     Process a single article to extract its decision tree.
 
@@ -40,7 +40,7 @@ def main_single_article(article_name: str):
     print("[DEBUG] Extracted article text length:", len(article_text))
 
     # 3. Run the full extraction pipeline
-    final_decision_tree = run_extraction_pipeline(article_text)
+    final_decision_tree = run_extraction_pipeline(article_text, debug=debug)
 
     print("\n\n--- FINAL MERGED DECISION TREE ---")
     print(final_decision_tree)
@@ -58,7 +58,7 @@ def main_all():
 
 
 if __name__ == "__main__":
-    main_single_article("High Blood Pressure")
+    main_single_article("High Blood Pressure", debug=True)
 
 
 

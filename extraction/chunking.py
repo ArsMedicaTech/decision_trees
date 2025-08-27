@@ -19,16 +19,26 @@ def chunk_text(full_text: str) -> List[str]:
 
 
 # --- Step 2: Processing (Map) Function ---
-def process_chunk(text_chunk: str, model, tokenizer, generation_config) -> str:
+def process_chunk(text_chunk: str, model, tokenizer, generation_config, debug: bool = False) -> str:
     """
     Runs the extraction prompt on a single chunk of text.
     """
-    print(f"--- Processing Chunk (length: {len(text_chunk)} chars) ---")
+    msg = f"--- Processing Chunk (length: {len(text_chunk)} chars) ---"
+    print(msg)
     messages = build_prompt(medical_text=text_chunk)
     
     # Call the built-in chat method on the single chunk
     response_text = model.chat(tokenizer, messages, generation_config=generation_config)
-    
+
+    if debug:
+        with open('log.txt', 'a') as f:
+            f.write(msg + "\n")
+            f.write("----- MEDICAL TEXT CHUNK -----\n")
+            f.write(text_chunk + "\n")
+            f.write("----- MODEL RESPONSE -----\n")
+            f.write(response_text + "\n")
+            f.write("----- END OF LOG -----\n")
+
     # Simple filter to check if the model found a tree
     if "DECISION POINT" not in response_text and "OUTCOME" not in response_text:
         print("--> No decision tree found in this chunk.")
@@ -71,7 +81,7 @@ def synthesize_trees(partial_trees: List[str], model, tokenizer, generation_conf
 
 
 # --- Main Orchestrator ---
-def run_extraction_pipeline(full_text: str) -> str:
+def run_extraction_pipeline(full_text: str, debug: bool = False) -> str:
     """
     Orchestrates the full chunk -> process -> synthesize pipeline.
     """
@@ -88,7 +98,7 @@ def run_extraction_pipeline(full_text: str) -> str:
     partial_trees = []
     for chunk in text_chunks:
         print(f"[DEBUG] Processing chunk (length: {len(chunk)} chars)")
-        result = process_chunk(chunk, model, tokenizer, generation_config)
+        result = process_chunk(chunk, model, tokenizer, generation_config, debug=debug)
         if result:
             partial_trees.append(result)
             
