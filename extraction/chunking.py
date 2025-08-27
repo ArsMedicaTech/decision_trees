@@ -23,6 +23,7 @@ def process_chunk(text_chunk: str, model, tokenizer, generation_config, debug: b
     """
     Runs the extraction prompt on a single chunk of text.
     """
+    print("DEBUG ENABLED: ", debug)
     msg = f"--- Processing Chunk (length: {len(text_chunk)} chars) ---"
     print(msg)
     messages = build_prompt(medical_text=text_chunk)
@@ -37,14 +38,21 @@ def process_chunk(text_chunk: str, model, tokenizer, generation_config, debug: b
             f.write(text_chunk + "\n")
             f.write("----- MODEL RESPONSE -----\n")
             f.write(response_text + "\n")
-            f.write("----- END OF LOG -----\n")
 
     # Simple filter to check if the model found a tree
     if "DECISION POINT" not in response_text and "OUTCOME" not in response_text:
-        print("--> No decision tree found in this chunk.")
+        msg2 = "--> No decision tree found in this chunk."
+        print(msg2)
+        with open('log.txt', 'a', encoding='utf-8') as f:
+            f.write(msg2 + "\n")
+            f.write("----- END OF LOG -----\n")
         return ""
 
-    print("--> Found partial decision tree.")
+    msg3 = "--> Found partial decision tree."
+    print(msg3)
+    with open('log.txt', 'a', encoding='utf-8') as f:
+        f.write(msg3 + "\n")
+        f.write("----- END OF LOG -----\n")
     return response_text
 
 
